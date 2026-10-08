@@ -1,0 +1,3 @@
+[submodule "evm-minting-master/lib/forge-std"]
+	path = evm-minting-master/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
