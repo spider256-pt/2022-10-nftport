@@ -96,10 +96,10 @@ contract Factory is AccessControlUpgradeable {
      * @param factoryOwner The address that should be assigned ADMIN_ROLE
      * @param factorySigner The address that should be assigned SIGNER_ROLE
      */
-    function initialize(address factoryOwner, address factorySigner)
-        public
-        initializer
-    {
+    function initialize(
+        address factoryOwner,
+        address factorySigner
+    ) public initializer {
         _grantRole(ADMIN_ROLE, factoryOwner);
         _grantRole(SIGNER_ROLE, factorySigner);
 
@@ -130,11 +130,10 @@ contract Factory is AccessControlUpgradeable {
      * @param name The name of the template to be deployed
      * @param initdata Payload for initializing the instance
      */
-    function deploy(string calldata name, bytes calldata initdata)
-        external
-        payable
-        paidOnly(deploymentFee)
-    {
+    function deploy(
+        string calldata name,
+        bytes calldata initdata
+    ) external payable paidOnly(deploymentFee) {
         _deploy(name, latestVersion[name], initdata);
     }
 
@@ -144,18 +143,17 @@ contract Factory is AccessControlUpgradeable {
      * @param instance Address of the contract we want to call
      * @param data Call data to be forwarded to the target contract
      */
-    function call(address instance, bytes calldata data)
-        external
-        payable
-        operatorOnly(instance)
-        paidOnly(callFee)
-    {
+    function call(
+        address instance,
+        bytes calldata data
+    ) external payable operatorOnly(instance) paidOnly(callFee) {
         _call(instance, data, msg.value - callFee);
     }
 
     /**
      * Deploy the latest version of the specified template
-     * @dev Requires a signature of the deployment payload (caller, template name and initialization data) by a `SIGNER_ROLE` wallet. Deprecated and will be removed once the API has migrated to the version-specific deploy() method below.
+     * @dev Requires a signature of the deployment payload (caller, template name and initialization data) by a `SIGNER_ROLE` wallet.
+     * Deprecated and will be removed once the API has migrated to the version-specific deploy() method below.
      * @param templateName Name of the template to be deployed
      * @param initdata Payload for initializing the instance
      * @param signature Signature for authorizing the deployment
@@ -262,11 +260,9 @@ contract Factory is AccessControlUpgradeable {
      * @param templateName Name of the template
      * @return templateVersions List of all version numbers that have been registered for that template
      */
-    function versions(string memory templateName)
-        external
-        view
-        returns (uint256[] memory templateVersions)
-    {
+    function versions(
+        string memory templateName
+    ) external view returns (uint256[] memory templateVersions) {
         uint256 count = _templateVersions[templateName].length;
         templateVersions = new uint256[](count);
 
@@ -281,11 +277,10 @@ contract Factory is AccessControlUpgradeable {
      * @param templateVersion Version of the implementation
      * @return Address of the implementation contract
      */
-    function implementation(string memory templateName, uint256 templateVersion)
-        external
-        view
-        returns (address)
-    {
+    function implementation(
+        string memory templateName,
+        uint256 templateVersion
+    ) external view returns (address) {
         return _templateImplementations[templateName][templateVersion];
     }
 
@@ -294,11 +289,10 @@ contract Factory is AccessControlUpgradeable {
      * @param instance Address of the template instance
      * @param operator Address of the operator
      */
-    function isOperator(address instance, address operator)
-        public
-        view
-        returns (bool)
-    {
+    function isOperator(
+        address instance,
+        address operator
+    ) public view returns (bool) {
         return hasRole(OPERATOR_ROLE(instance), operator);
     }
 
@@ -338,10 +332,9 @@ contract Factory is AccessControlUpgradeable {
      * @dev Implementation details will be read and validated on-chain
      * @param implementationAddress Address of the template implementation contract
      */
-    function registerTemplate(address implementationAddress)
-        public
-        onlyRole(ADMIN_ROLE)
-    {
+    function registerTemplate(
+        address implementationAddress
+    ) public onlyRole(ADMIN_ROLE) {
         require(
             Address.isContract(implementationAddress),
             "Not a valid contract"
@@ -362,10 +355,10 @@ contract Factory is AccessControlUpgradeable {
      * @param instance Contract address
      * @param newStatus New whitelist status
      */
-    function setWhitelisted(address instance, bool newStatus)
-        external
-        onlyRole(ADMIN_ROLE)
-    {
+    function setWhitelisted(
+        address instance,
+        bool newStatus
+    ) external onlyRole(ADMIN_ROLE) {
         _setWhitelisted(instance, newStatus);
     }
 
