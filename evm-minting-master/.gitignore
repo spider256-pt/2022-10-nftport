@@ -7,4 +7,4 @@ docs/
 
 coverage.json
 **/.DS_Store
-.envrc
+.envrcout/
