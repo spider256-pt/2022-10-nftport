@@ -78,8 +78,7 @@ contract Factory is AccessControlUpgradeable {
     mapping(string => uint256[]) private _templateVersions;
 
     /// Implementation addresses for all template versions
-    mapping(string => mapping(uint256 => address))
-        private _templateImplementations;
+    mapping(string => mapping(uint256 => address)) private _templateImplementations;
 
     /****************************
      * Contract init & upgrades *
@@ -96,10 +95,7 @@ contract Factory is AccessControlUpgradeable {
      * @param factoryOwner The address that should be assigned ADMIN_ROLE
      * @param factorySigner The address that should be assigned SIGNER_ROLE
      */
-    function initialize(
-        address factoryOwner,
-        address factorySigner
-    ) public initializer {
+    function initialize(address factoryOwner, address factorySigner) public initializer {
         _grantRole(ADMIN_ROLE, factoryOwner);
         _grantRole(SIGNER_ROLE, factorySigner);
 
@@ -130,10 +126,7 @@ contract Factory is AccessControlUpgradeable {
      * @param name The name of the template to be deployed
      * @param initdata Payload for initializing the instance
      */
-    function deploy(
-        string calldata name,
-        bytes calldata initdata
-    ) external payable paidOnly(deploymentFee) {
+    function deploy(string calldata name, bytes calldata initdata) external payable paidOnly(deploymentFee) {
         _deploy(name, latestVersion[name], initdata);
     }
 
@@ -143,10 +136,7 @@ contract Factory is AccessControlUpgradeable {
      * @param instance Address of the contract we want to call
      * @param data Call data to be forwarded to the target contract
      */
-    function call(
-        address instance,
-        bytes calldata data
-    ) external payable operatorOnly(instance) paidOnly(callFee) {
+    function call(address instance, bytes calldata data) external payable operatorOnly(instance) paidOnly(callFee) {
         _call(instance, data, msg.value - callFee);
     }
 
@@ -158,17 +148,10 @@ contract Factory is AccessControlUpgradeable {
      * @param initdata Payload for initializing the instance
      * @param signature Signature for authorizing the deployment
      */
-    function deploy(
-        string calldata templateName,
-        bytes calldata initdata,
-        bytes calldata signature
-    )
+    function deploy(string calldata templateName, bytes calldata initdata, bytes calldata signature)
         external
         payable
-        signedOnly(
-            abi.encodePacked(msg.sender, templateName, initdata),
-            signature
-        )
+        signedOnly(abi.encodePacked(msg.sender, templateName, initdata), signature)
     {
         _deploy(templateName, latestVersion[templateName], initdata);
     }
@@ -186,19 +169,7 @@ contract Factory is AccessControlUpgradeable {
         uint256 templateVersion,
         bytes calldata initdata,
         bytes calldata signature
-    )
-        external
-        payable
-        signedOnly(
-            abi.encodePacked(
-                msg.sender,
-                templateName,
-                templateVersion,
-                initdata
-            ),
-            signature
-        )
-    {
+    ) external payable signedOnly(abi.encodePacked(msg.sender, templateName, templateVersion, initdata), signature) {
         _deploy(templateName, templateVersion, initdata);
     }
 
@@ -209,11 +180,7 @@ contract Factory is AccessControlUpgradeable {
      * @param data Call data to be forwarded to the target contract
      * @param signature Signature for authorizing the contract call
      */
-    function call(
-        address instance,
-        bytes calldata data,
-        bytes calldata signature
-    )
+    function call(address instance, bytes calldata data, bytes calldata signature)
         external
         payable
         operatorOnly(instance)
@@ -228,11 +195,7 @@ contract Factory is AccessControlUpgradeable {
      * @param operator The address of the operator that we want to update the status of
      * @param allowed New operator status
      */
-    function setOperator(
-        address instance,
-        address operator,
-        bool allowed
-    ) external operatorOnly(instance) {
+    function setOperator(address instance, address operator, bool allowed) external operatorOnly(instance) {
         require(msg.sender != operator, "Cannot change own role");
 
         _setOperator(instance, operator, allowed);
@@ -260,9 +223,7 @@ contract Factory is AccessControlUpgradeable {
      * @param templateName Name of the template
      * @return templateVersions List of all version numbers that have been registered for that template
      */
-    function versions(
-        string memory templateName
-    ) external view returns (uint256[] memory templateVersions) {
+    function versions(string memory templateName) external view returns (uint256[] memory templateVersions) {
         uint256 count = _templateVersions[templateName].length;
         templateVersions = new uint256[](count);
 
@@ -277,10 +238,7 @@ contract Factory is AccessControlUpgradeable {
      * @param templateVersion Version of the implementation
      * @return Address of the implementation contract
      */
-    function implementation(
-        string memory templateName,
-        uint256 templateVersion
-    ) external view returns (address) {
+    function implementation(string memory templateName, uint256 templateVersion) external view returns (address) {
         return _templateImplementations[templateName][templateVersion];
     }
 
@@ -289,10 +247,7 @@ contract Factory is AccessControlUpgradeable {
      * @param instance Address of the template instance
      * @param operator Address of the operator
      */
-    function isOperator(
-        address instance,
-        address operator
-    ) public view returns (bool) {
+    function isOperator(address instance, address operator) public view returns (bool) {
         return hasRole(OPERATOR_ROLE(instance), operator);
     }
 
@@ -332,13 +287,8 @@ contract Factory is AccessControlUpgradeable {
      * @dev Implementation details will be read and validated on-chain
      * @param implementationAddress Address of the template implementation contract
      */
-    function registerTemplate(
-        address implementationAddress
-    ) public onlyRole(ADMIN_ROLE) {
-        require(
-            Address.isContract(implementationAddress),
-            "Not a valid contract"
-        );
+    function registerTemplate(address implementationAddress) public onlyRole(ADMIN_ROLE) {
+        require(Address.isContract(implementationAddress), "Not a valid contract");
 
         // Read template information from the implementation contract
         ITemplate templateImplementation = ITemplate(implementationAddress);
@@ -355,10 +305,7 @@ contract Factory is AccessControlUpgradeable {
      * @param instance Contract address
      * @param newStatus New whitelist status
      */
-    function setWhitelisted(
-        address instance,
-        bool newStatus
-    ) external onlyRole(ADMIN_ROLE) {
+    function setWhitelisted(address instance, bool newStatus) external onlyRole(ADMIN_ROLE) {
         _setWhitelisted(instance, newStatus);
     }
 
@@ -380,21 +327,11 @@ contract Factory is AccessControlUpgradeable {
      * @param templateVersion Template version
      * @param implementationAddress Address of the implementation contract
      */
-    function _setTemplate(
-        string memory templateName,
-        uint256 templateVersion,
-        address implementationAddress
-    ) internal {
-        require(
-            _templateImplementations[templateName][templateVersion] ==
-                address(0),
-            "Version already exists"
-        );
+    function _setTemplate(string memory templateName, uint256 templateVersion, address implementationAddress) internal {
+        require(_templateImplementations[templateName][templateVersion] == address(0), "Version already exists");
 
         // Store the template implementation address
-        _templateImplementations[templateName][
-            templateVersion
-        ] = implementationAddress;
+        _templateImplementations[templateName][templateVersion] = implementationAddress;
 
         // Update the list of available versions for a template
         _templateVersions[templateName].push(templateVersion);
@@ -410,11 +347,7 @@ contract Factory is AccessControlUpgradeable {
             latestImplementation[templateName] = implementationAddress;
         }
 
-        emit TemplateAdded(
-            templateName,
-            templateVersion,
-            implementationAddress
-        );
+        emit TemplateAdded(templateName, templateVersion, implementationAddress);
     }
 
     /**
@@ -432,11 +365,7 @@ contract Factory is AccessControlUpgradeable {
      * @param operator Operator address
      * @param allowed New operator status
      */
-    function _setOperator(
-        address instance,
-        address operator,
-        bool allowed
-    ) internal {
+    function _setOperator(address instance, address operator, bool allowed) internal {
         if (allowed) {
             _grantRole(OPERATOR_ROLE(instance), operator);
         } else {
@@ -452,14 +381,8 @@ contract Factory is AccessControlUpgradeable {
      * @param templateVersion Version of the template implementation
      * @param initdata Initialization data for the newly deployed instance
      */
-    function _deploy(
-        string calldata templateName,
-        uint256 templateVersion,
-        bytes calldata initdata
-    ) internal {
-        address implementationAddress = _templateImplementations[templateName][
-            templateVersion
-        ];
+    function _deploy(string calldata templateName, uint256 templateVersion, bytes calldata initdata) internal {
+        address implementationAddress = _templateImplementations[templateName][templateVersion];
         require(implementationAddress != address(0), "Missing implementation");
 
         address clone = Clones.clone(implementationAddress);
@@ -477,26 +400,14 @@ contract Factory is AccessControlUpgradeable {
      * @param data Call data to be forwarded to the instance
      * @param value Fees to be forwarded with the call
      */
-    function _call(
-        address instance,
-        bytes calldata data,
-        uint256 value
-    ) internal {
+    function _call(address instance, bytes calldata data, uint256 value) internal {
         require(whitelisted[instance], "Contract not whitelisted");
 
         assembly {
             let _calldata := mload(0x40)
             calldatacopy(_calldata, data.offset, data.length)
 
-            let result := call(
-                gas(),
-                instance,
-                value,
-                _calldata,
-                data.length,
-                0,
-                0
-            )
+            let result := call(gas(), instance, value, _calldata, data.length, 0, 0)
 
             let returndata := mload(0x40)
             let size := returndatasize()
@@ -529,10 +440,7 @@ contract Factory is AccessControlUpgradeable {
      */
     modifier signedOnly(bytes memory message, bytes calldata signature) {
         // Gets the address that signed the message with signature
-        address messageSigner = ECDSA.recover(
-            ECDSA.toEthSignedMessageHash(message),
-            signature
-        );
+        address messageSigner = ECDSA.recover(ECDSA.toEthSignedMessageHash(message), signature);
 
         require(hasRole(SIGNER_ROLE, messageSigner), "Signer not recognized");
 

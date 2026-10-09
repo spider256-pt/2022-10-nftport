@@ -21,13 +21,7 @@ import "../lib/ITemplate.sol";
  * This is a template contract, meaning it cannot be initialized or used directly.
  * The only function of this contract is to store the code that proxies delegate their logic to.
  */
-contract NFTCollection is
-    ERC721A,
-    ERC2981,
-    AccessControl,
-    Initializable,
-    ITemplate
-{
+contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable, ITemplate {
     using Address for address payable;
     using Strings for uint256;
 
@@ -99,10 +93,7 @@ contract NFTCollection is
     }
 
     // Event emitted when `transferOwnership` called by current owner.
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /*************
      * Constants *
@@ -138,10 +129,10 @@ contract NFTCollection is
 
     /// Contract initializer
     // https://eips.ethereum.org/EIPS/eip-1167
-    function initialize(
-        DeploymentConfig memory deploymentConfig,
-        RuntimeConfig memory runtimeConfig
-    ) public initializer {
+    function initialize(DeploymentConfig memory deploymentConfig, RuntimeConfig memory runtimeConfig)
+        public
+        initializer
+    {
         _validateDeploymentConfig(deploymentConfig);
 
         // template intializer gets ADMIN_ROLE to call contract write functions
@@ -161,11 +152,7 @@ contract NFTCollection is
 
     /// Public mint function, can be called by any address
     /// if `DeploymentConfig.publicMintStart` is before the current block timestamp
-    function mint(uint256 amount)
-        external
-        payable
-        paymentProvided(amount * _runtimeConfig.publicMintPrice)
-    {
+    function mint(uint256 amount) external payable paymentProvided(amount * _runtimeConfig.publicMintPrice) {
         require(mintingActive(), "Minting has not started yet");
 
         _mintTokens(msg.sender, amount);
@@ -179,10 +166,7 @@ contract NFTCollection is
         paymentProvided(amount * _runtimeConfig.presaleMintPrice)
     {
         require(presaleActive(), "Presale has not started yet");
-        require(
-            isWhitelisted(msg.sender, proof),
-            "Not whitelisted for presale"
-        );
+        require(isWhitelisted(msg.sender, proof), "Not whitelisted for presale");
 
         // Each presale whitelisted address can only mint once, up to `DeploymentConfig.tokensPerMint` tokens
         _presaleMinted[msg.sender] = true;
@@ -215,11 +199,7 @@ contract NFTCollection is
     }
 
     /// Check if the wallet is whitelisted for the presale
-    function isWhitelisted(address wallet, bytes32[] calldata proof)
-        public
-        view
-        returns (bool)
-    {
+    function isWhitelisted(address wallet, bytes32[] calldata proof) public view returns (bool) {
         // Each wallet can only call `presaleMint` once
         require(!_presaleMinted[wallet], "Already minted");
 
@@ -227,8 +207,7 @@ contract NFTCollection is
         bytes32 leaf = keccak256(abi.encodePacked(wallet));
 
         // Checks if `leaf` is part of the merkle tree
-        return
-            MerkleProof.verify(proof, _runtimeConfig.presaleMerkleRoot, leaf);
+        return MerkleProof.verify(proof, _runtimeConfig.presaleMerkleRoot, leaf);
     }
 
     /// Contract owner address
@@ -242,10 +221,7 @@ contract NFTCollection is
      *******************/
 
     /// Transfer contract ownership
-    function transferOwnership(address newOwner)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function transferOwnership(address newOwner) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(newOwner != _deploymentConfig.owner, "Already the owner");
         _transferOwnership(newOwner);
     }
@@ -265,10 +241,7 @@ contract NFTCollection is
      *****************/
 
     /// Mint a token from the reserve
-    function reserveMint(address to, uint256 amount)
-        external
-        onlyRole(ADMIN_ROLE)
-    {
+    function reserveMint(address to, uint256 amount) external onlyRole(ADMIN_ROLE) {
         require(amount <= reserveRemaining, "Not enough reserved");
         // if `reserveRemaining` ends up as 0, then further reserve mints are disabled, since `_mintTokens`
         // expects `amount` to be greater than 0
@@ -286,10 +259,7 @@ contract NFTCollection is
 
     /// Update contract configuration
     /// @dev Callable by admin roles only
-    function updateConfig(RuntimeConfig calldata newConfig)
-        external
-        onlyRole(ADMIN_ROLE)
-    {
+    function updateConfig(RuntimeConfig calldata newConfig) external onlyRole(ADMIN_ROLE) {
         _validateRuntimeConfig(newConfig);
         _runtimeConfig = newConfig;
     }
@@ -322,28 +292,16 @@ contract NFTCollection is
     }
 
     /// Validate deployment config
-    function _validateDeploymentConfig(DeploymentConfig memory config)
-        internal
-        pure
-    {
+    function _validateDeploymentConfig(DeploymentConfig memory config) internal pure {
         require(config.maxSupply > 0, "Maximum supply must be non-zero");
         require(config.tokensPerMint > 0, "Tokens per mint must be non-zero");
-        require(
-            config.treasuryAddress != address(0),
-            "Treasury address cannot be null"
-        );
+        require(config.treasuryAddress != address(0), "Treasury address cannot be null");
         require(config.owner != address(0), "Contract must have an owner");
-        require(
-            config.reservedSupply <= config.maxSupply,
-            "Reserve greater than supply"
-        );
+        require(config.reservedSupply <= config.maxSupply, "Reserve greater than supply");
     }
 
     /// Validate a runtime configuration change
-    function _validateRuntimeConfig(RuntimeConfig calldata config)
-        internal
-        view
-    {
+    function _validateRuntimeConfig(RuntimeConfig calldata config) internal view {
         // Can't set royalties to more than 100%
         require(config.royaltiesBps <= ROYALTIES_BASIS, "Royalties too high");
 
@@ -356,45 +314,27 @@ contract NFTCollection is
     }
 
     /// Checks if `_runTimeConfig.publicMintPrice` and `_runTimeConfig.publicMintPriceFrozen` updates are valid
-    function _validatePublicMintPrice(RuntimeConfig calldata config)
-        internal
-        view
-    {
+    function _validatePublicMintPrice(RuntimeConfig calldata config) internal view {
         // As long as public mint price is not frozen, all changes are valid
         if (!_runtimeConfig.publicMintPriceFrozen) return;
 
         // Can't change public mint price once frozen
-        require(
-            _runtimeConfig.publicMintPrice == config.publicMintPrice,
-            "publicMintPrice is frozen"
-        );
+        require(_runtimeConfig.publicMintPrice == config.publicMintPrice, "publicMintPrice is frozen");
 
         // Can't unfreeze public mint price
-        require(
-            config.publicMintPriceFrozen,
-            "publicMintPriceFrozen is frozen"
-        );
+        require(config.publicMintPriceFrozen, "publicMintPriceFrozen is frozen");
     }
 
     /// Checks if `_runTimeConfig.presaleMintPrice` and `_runTimeConfig.presaleMintPriceFrozen` updates are valid
-    function _validatePresaleMintPrice(RuntimeConfig calldata config)
-        internal
-        view
-    {
+    function _validatePresaleMintPrice(RuntimeConfig calldata config) internal view {
         // As long as presale mint price is not frozen, all changes are valid
         if (!_runtimeConfig.presaleMintPriceFrozen) return;
 
         // Can't change presale mint price once frozen
-        require(
-            _runtimeConfig.presaleMintPrice == config.presaleMintPrice,
-            "presaleMintPrice is frozen"
-        );
+        require(_runtimeConfig.presaleMintPrice == config.presaleMintPrice, "presaleMintPrice is frozen");
 
         // Can't unfreeze presale mint price
-        require(
-            config.presaleMintPriceFrozen,
-            "presaleMintPriceFrozen is frozen"
-        );
+        require(config.presaleMintPriceFrozen, "presaleMintPriceFrozen is frozen");
     }
 
     /// Checks if `_runtimeConfig.metadataUpdatable` and `_runtimeConfig.baseURI` updates are valid
@@ -407,8 +347,7 @@ contract NFTCollection is
 
         // We also can't allow base URI to change
         require(
-            keccak256(abi.encodePacked(_runtimeConfig.baseURI)) ==
-                keccak256(abi.encodePacked(config.baseURI)),
+            keccak256(abi.encodePacked(_runtimeConfig.baseURI)) == keccak256(abi.encodePacked(config.baseURI)),
             "Metadata is frozen"
         );
     }
@@ -436,29 +375,19 @@ contract NFTCollection is
         override(ERC721A, AccessControl, ERC2981)
         returns (bool)
     {
-        return
-            ERC721A.supportsInterface(interfaceId) ||
-            AccessControl.supportsInterface(interfaceId) ||
-            ERC2981.supportsInterface(interfaceId);
+        return ERC721A.supportsInterface(interfaceId) || AccessControl.supportsInterface(interfaceId)
+            || ERC2981.supportsInterface(interfaceId);
     }
 
     /// Get the token metadata URI
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override
-        returns (string memory)
-    {
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
         require(_exists(tokenId), "Token does not exist");
 
         // If `_runtimeConfig.baseURI` is empty then `_runtimeConfig.prerevealTokenURI` is returned
         // otherwise `_runtimeConfig.baseURI` + `tokenId` returned
-        return
-            bytes(_runtimeConfig.baseURI).length > 0
-                ? string(
-                    abi.encodePacked(_runtimeConfig.baseURI, tokenId.toString())
-                )
-                : _runtimeConfig.prerevealTokenURI;
+        return bytes(_runtimeConfig.baseURI).length > 0
+            ? string(abi.encodePacked(_runtimeConfig.baseURI, tokenId.toString()))
+            : _runtimeConfig.prerevealTokenURI;
     }
 
     /// @dev Need name() to support setting it in the initializer instead of constructor
@@ -472,15 +401,9 @@ contract NFTCollection is
     }
 
     /// @dev ERC2981 token royalty info
-    function royaltyInfo(uint256, uint256 salePrice)
-        external
-        view
-        returns (address receiver, uint256 royaltyAmount)
-    {
+    function royaltyInfo(uint256, uint256 salePrice) external view returns (address receiver, uint256 royaltyAmount) {
         receiver = _runtimeConfig.royaltiesAddress;
-        royaltyAmount =
-            (_runtimeConfig.royaltiesBps * salePrice) /
-            ROYALTIES_BASIS;
+        royaltyAmount = (_runtimeConfig.royaltiesBps * salePrice) / ROYALTIES_BASIS;
     }
 
     /**
@@ -495,17 +418,14 @@ contract NFTCollection is
                         '{"seller_fee_basis_points": ', // solhint-disable-line quotes
                         _runtimeConfig.royaltiesBps.toString(),
                         ', "fee_recipient": "', // solhint-disable-line quotes
-                        uint256(uint160(_runtimeConfig.royaltiesAddress))
-                            .toHexString(20),
+                        uint256(uint160(_runtimeConfig.royaltiesAddress)).toHexString(20),
                         '"}' // solhint-disable-line quotes
                     )
                 )
             )
         );
 
-        string memory output = string(
-            abi.encodePacked("data:application/json;base64,", json)
-        );
+        string memory output = string(abi.encodePacked("data:application/json;base64,", json));
 
         return output;
     }

@@ -24,8 +24,7 @@ abstract contract GranularRoles is AccessControlUpgradeable {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     // Following roles can have multiple addresses, can be changed by admin or update contract role
     bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
-    bytes32 public constant UPDATE_CONTRACT_ROLE =
-        keccak256("UPDATE_CONTRACT_ROLE");
+    bytes32 public constant UPDATE_CONTRACT_ROLE = keccak256("UPDATE_CONTRACT_ROLE");
     bytes32 public constant UPDATE_TOKEN_ROLE = keccak256("UPDATE_TOKEN_ROLE");
     bytes32 public constant BURN_ROLE = keccak256("BURN_ROLE");
     bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
@@ -53,10 +52,7 @@ abstract contract GranularRoles is AccessControlUpgradeable {
     mapping(bytes32 => bool) internal _rolesFrozen;
 
     // Event emitted when `transferOwnership` called by current owner.
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /*
      * Contract owner address
@@ -84,15 +80,8 @@ abstract contract GranularRoles is AccessControlUpgradeable {
     }
 
     // Admin role has all access granted by default
-    function hasRole(bytes32 role, address account)
-        public
-        view
-        virtual
-        override
-        returns (bool)
-    {
-        return
-            super.hasRole(ADMIN_ROLE, account) || super.hasRole(role, account);
+    function hasRole(bytes32 role, address account) public view virtual override returns (bool) {
+        return super.hasRole(ADMIN_ROLE, account) || super.hasRole(role, account);
     }
 
     /**
@@ -100,46 +89,28 @@ abstract contract GranularRoles is AccessControlUpgradeable {
      * Can only be used to set the `_owner` and `_nftport` addresses,
      * or any amount of accounts for any supported role.
      */
-    function _initRoles(address owner_, RolesAddresses[] memory rolesAddresses)
-        internal
-    {
+    function _initRoles(address owner_, RolesAddresses[] memory rolesAddresses) internal {
         _owner = owner_;
         _nftPort = msg.sender;
         _grantRole(ADMIN_ROLE, _owner);
         _grantRole(ADMIN_ROLE, _nftPort);
 
         // Loop through all roles from the input
-        for (
-            uint256 roleIndex = 0;
-            roleIndex < rolesAddresses.length;
-            roleIndex++
-        ) {
+        for (uint256 roleIndex = 0; roleIndex < rolesAddresses.length; roleIndex++) {
             bytes32 role = rolesAddresses[roleIndex].role;
             // Check if the role is supported and is not `ADMIN_ROLE`
             require(
                 _regularRoleValid(role),
                 string(
-                    abi.encodePacked(
-                        "GranularRoles: invalid role ",
-                        StringsUpgradeable.toHexString(uint256(role), 32)
-                    )
+                    abi.encodePacked("GranularRoles: invalid role ", StringsUpgradeable.toHexString(uint256(role), 32))
                 )
             );
             // Loop through all the addresses for the role being processed
             // Grant the given role to all the specified addresses
             // and add them to the roles enumaration `_rolesAddressesIndexed`
-            for (
-                uint256 addressIndex = 0;
-                addressIndex < rolesAddresses[roleIndex].addresses.length;
-                addressIndex++
-            ) {
-                _grantRole(
-                    role,
-                    rolesAddresses[roleIndex].addresses[addressIndex]
-                );
-                _rolesAddressesIndexed[role].push(
-                    rolesAddresses[roleIndex].addresses[addressIndex]
-                );
+            for (uint256 addressIndex = 0; addressIndex < rolesAddresses[roleIndex].addresses.length; addressIndex++) {
+                _grantRole(role, rolesAddresses[roleIndex].addresses[addressIndex]);
+                _rolesAddressesIndexed[role].push(rolesAddresses[roleIndex].addresses[addressIndex]);
             }
             // If the given role is frozen then further updates to it are disabled
             if (rolesAddresses[roleIndex].frozen) {
@@ -155,25 +126,17 @@ abstract contract GranularRoles is AccessControlUpgradeable {
      */
     function _updateRoles(RolesAddresses[] memory rolesAddresses) internal {
         if (rolesAddresses.length > 0) {
-            require(
-                hasRole(ADMIN_ROLE, msg.sender),
-                "GranularRoles: not an admin"
-            );
+            require(hasRole(ADMIN_ROLE, msg.sender), "GranularRoles: not an admin");
 
             // Loop through all roles from the input
-            for (
-                uint256 roleIndex = 0;
-                roleIndex < rolesAddresses.length;
-                roleIndex++
-            ) {
+            for (uint256 roleIndex = 0; roleIndex < rolesAddresses.length; roleIndex++) {
                 bytes32 role = rolesAddresses[roleIndex].role;
                 // Check if the role is supported and is not `ADMIN_ROLE`
                 require(
                     _regularRoleValid(role),
                     string(
                         abi.encodePacked(
-                            "GranularRoles: invalid role ",
-                            StringsUpgradeable.toHexString(uint256(role), 32)
+                            "GranularRoles: invalid role ", StringsUpgradeable.toHexString(uint256(role), 32)
                         )
                     )
                 );
@@ -182,23 +145,14 @@ abstract contract GranularRoles is AccessControlUpgradeable {
                     !_rolesFrozen[role],
                     string(
                         abi.encodePacked(
-                            "GranularRoles: role ",
-                            StringsUpgradeable.toHexString(uint256(role), 32),
-                            " is frozen"
+                            "GranularRoles: role ", StringsUpgradeable.toHexString(uint256(role), 32), " is frozen"
                         )
                     )
                 );
                 // Loop through all the addresses for the given role
                 // Remove all accounts from the role being processed to add new ones from the input
-                for (
-                    uint256 addressIndex = 0;
-                    addressIndex < _rolesAddressesIndexed[role].length;
-                    addressIndex++
-                ) {
-                    _revokeRole(
-                        role,
-                        _rolesAddressesIndexed[role][addressIndex]
-                    );
+                for (uint256 addressIndex = 0; addressIndex < _rolesAddressesIndexed[role].length; addressIndex++) {
+                    _revokeRole(role, _rolesAddressesIndexed[role][addressIndex]);
                 }
                 delete _rolesAddressesIndexed[role];
                 // Loop through all the addresses for the given role from the input.
@@ -209,13 +163,8 @@ abstract contract GranularRoles is AccessControlUpgradeable {
                     addressIndex < rolesAddresses[roleIndex].addresses.length;
                     addressIndex++
                 ) {
-                    _grantRole(
-                        role,
-                        rolesAddresses[roleIndex].addresses[addressIndex]
-                    );
-                    _rolesAddressesIndexed[role].push(
-                        rolesAddresses[roleIndex].addresses[addressIndex]
-                    );
+                    _grantRole(role, rolesAddresses[roleIndex].addresses[addressIndex]);
+                    _rolesAddressesIndexed[role].push(rolesAddresses[roleIndex].addresses[addressIndex]);
                 }
                 if (rolesAddresses[roleIndex].frozen) {
                     _rolesFrozen[role] = true;
@@ -226,11 +175,7 @@ abstract contract GranularRoles is AccessControlUpgradeable {
 
     // Checks if role is valid, does not contain the `ADMIN_ROLE`
     function _regularRoleValid(bytes32 role) internal pure returns (bool) {
-        return
-            role == MINT_ROLE ||
-            role == UPDATE_CONTRACT_ROLE ||
-            role == UPDATE_TOKEN_ROLE ||
-            role == BURN_ROLE ||
-            role == TRANSFER_ROLE;
+        return role == MINT_ROLE || role == UPDATE_CONTRACT_ROLE || role == UPDATE_TOKEN_ROLE || role == BURN_ROLE
+            || role == TRANSFER_ROLE;
     }
 }

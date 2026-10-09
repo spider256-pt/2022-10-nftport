@@ -111,10 +111,7 @@ contract ERC1155NFTProduct is ERC1155Upgradeable, GranularRoles, ITemplate {
      *******************/
 
     // Allows to set a default URI for tokens, which is only returned if token URI does not exist for given token ID
-    function setURI(string memory _newURI)
-        public
-        onlyRole(UPDATE_CONTRACT_ROLE)
-    {
+    function setURI(string memory _newURI) public onlyRole(UPDATE_CONTRACT_ROLE) {
         _setURI(_newURI);
     }
 
@@ -126,23 +123,18 @@ contract ERC1155NFTProduct is ERC1155Upgradeable, GranularRoles, ITemplate {
      * Token ID must exist, `metadataUpdatable` must be true and token URI for given token cannot be frozen.
      * Only callable by accounts with `UPDATE_TOKEN_ROLE` or `ADMIN_ROLE`.
      */
-    function updateTokenUri(
-        uint256 _tokenId,
-        string memory _newUri,
-        bool _isFreezeTokenUri
-    ) public onlyRole(UPDATE_TOKEN_ROLE) {
+    function updateTokenUri(uint256 _tokenId, string memory _newUri, bool _isFreezeTokenUri)
+        public
+        onlyRole(UPDATE_TOKEN_ROLE)
+    {
         require(_exists(_tokenId), "Token does not exist");
         require(metadataUpdatable, "Metadata is frozen");
         require(freezeTokenUris[_tokenId] != true, "Token is frozen");
-        require(
-            _isFreezeTokenUri || (bytes(_newUri).length != 0),
-            "Either _newUri or _isFreezeTokenUri=true required"
-        );
+        require(_isFreezeTokenUri || (bytes(_newUri).length != 0), "Either _newUri or _isFreezeTokenUri=true required");
 
         if (bytes(_newUri).length != 0) {
             require(
-                keccak256(bytes(_tokenURIs[_tokenId])) !=
-                    keccak256(bytes(string(abi.encodePacked(_newUri)))),
+                keccak256(bytes(_tokenURIs[_tokenId])) != keccak256(bytes(string(abi.encodePacked(_newUri)))),
                 "New token URI is same as updated"
             );
             _tokenURIs[_tokenId] = _newUri;
@@ -172,10 +164,7 @@ contract ERC1155NFTProduct is ERC1155Upgradeable, GranularRoles, ITemplate {
      * Input `ids` and `values` must be in direct correlation,
      * an index in both lists referring to the same token.
      */
-    function burnBatch(uint256[] memory ids, uint256[] memory values)
-        public
-        onlyRole(BURN_ROLE)
-    {
+    function burnBatch(uint256[] memory ids, uint256[] memory values) public onlyRole(BURN_ROLE) {
         require(tokensBurnable, "Burns are disabled");
         _burnBatch(_owner, ids, values);
         for (uint256 i = 0; i < ids.length; i++) {
@@ -189,11 +178,7 @@ contract ERC1155NFTProduct is ERC1155Upgradeable, GranularRoles, ITemplate {
      * at least `value` amount of tokens must exist.
      * Only callable by accounts with `TRANSFER_ROLE` or `ADMIN_ROLE`.
      */
-    function transferByOwner(
-        address to,
-        uint256 id,
-        uint256 amount
-    ) public onlyRole(TRANSFER_ROLE) {
+    function transferByOwner(address to, uint256 id, uint256 amount) public onlyRole(TRANSFER_ROLE) {
         require(tokensTransferable, "Transfers are disabled");
         _safeTransferFrom(_owner, to, id, amount, "");
     }
@@ -203,11 +188,10 @@ contract ERC1155NFTProduct is ERC1155Upgradeable, GranularRoles, ITemplate {
      * Input `ids` and `values` must be in direct correlation,
      * an index in both lists referring to the same token.
      */
-    function transferByOwnerBatch(
-        address[] memory to,
-        uint256[] memory ids,
-        uint256[] memory amounts
-    ) public onlyRole(TRANSFER_ROLE) {
+    function transferByOwnerBatch(address[] memory to, uint256[] memory ids, uint256[] memory amounts)
+        public
+        onlyRole(TRANSFER_ROLE)
+    {
         require(tokensTransferable, "Transfers are disabled");
         for (uint256 i = 0; i < ids.length; i++) {
             _safeTransferFrom(_owner, to[i], ids[i], amounts[i], "");
@@ -227,9 +211,8 @@ contract ERC1155NFTProduct is ERC1155Upgradeable, GranularRoles, ITemplate {
     ) public onlyRole(UPDATE_CONTRACT_ROLE) {
         // If metadata is frozen, baseURI cannot be updated
         require(
-            metadataUpdatable ||
-                (keccak256(abi.encodePacked(newConfig.baseURI)) ==
-                    keccak256(abi.encodePacked(baseURI))),
+            metadataUpdatable
+                || (keccak256(abi.encodePacked(newConfig.baseURI)) == keccak256(abi.encodePacked(baseURI))),
             "Metadata is frozen"
         );
 
@@ -256,12 +239,10 @@ contract ERC1155NFTProduct is ERC1155Upgradeable, GranularRoles, ITemplate {
      * Allows to mint tokens by the contract `_owner`.
      * Only callable by accounts with `MINT_ROLE` or `ADMIN_ROLE`.
      */
-    function mintByOwner(
-        address account,
-        uint256 id,
-        uint256 amount,
-        string memory tokenUri
-    ) public onlyRole(MINT_ROLE) {
+    function mintByOwner(address account, uint256 id, uint256 amount, string memory tokenUri)
+        public
+        onlyRole(MINT_ROLE)
+    {
         require(!_exists(id), "NFT: token already minted");
         if (bytes(tokenUri).length > 0) {
             _tokenURIs[id] = tokenUri;
@@ -276,18 +257,13 @@ contract ERC1155NFTProduct is ERC1155Upgradeable, GranularRoles, ITemplate {
      * Input `ids` and `values` must be in direct correlation,
      * an index in both lists referring to the same token.
      */
-    function mintByOwnerBatch(
-        address[] memory to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        string[] memory uris
-    ) public onlyRole(MINT_ROLE) {
+    function mintByOwnerBatch(address[] memory to, uint256[] memory ids, uint256[] memory amounts, string[] memory uris)
+        public
+        onlyRole(MINT_ROLE)
+    {
         for (uint256 i = 0; i < ids.length; i++) {
             require(!_exists(ids[i]), "One of tokens is already minted");
-            require(
-                to[i] == address(to[i]),
-                "NFT: one of addresses is invalid"
-            );
+            require(to[i] == address(to[i]), "NFT: one of addresses is invalid");
             require(amounts[i] > 0, "NFT: all amounts must be > 0");
             tokenSupply[ids[i]] += amounts[i];
             if (bytes(uris[i]).length > 0) {
@@ -326,21 +302,14 @@ contract ERC1155NFTProduct is ERC1155Upgradeable, GranularRoles, ITemplate {
     }
 
     // @dev ERC2981 token royalty info
-    function royaltyInfo(uint256, uint256 salePrice)
-        external
-        view
-        returns (address, uint256)
-    {
-        return (
-            royaltiesAddress,
-            (royaltiesBasisPoints * salePrice) / ROYALTIES_BASIS
-        );
+    function royaltyInfo(uint256, uint256 salePrice) external view returns (address, uint256) {
+        return (royaltiesAddress, (royaltiesBasisPoints * salePrice) / ROYALTIES_BASIS);
     }
 
     /**
-    * @dev OpenSea contract metadata, returns a base64 encoded JSON string containing royalties basis points
-    * and royalties address
-    */
+     * @dev OpenSea contract metadata, returns a base64 encoded JSON string containing royalties basis points
+     * and royalties address
+     */
     function contractURI() external view returns (string memory) {
         string memory json = Base64.encode(
             bytes(
@@ -359,9 +328,7 @@ contract ERC1155NFTProduct is ERC1155Upgradeable, GranularRoles, ITemplate {
             )
         );
 
-        string memory output = string(
-            abi.encodePacked("data:application/json;base64,", json)
-        );
+        string memory output = string(abi.encodePacked("data:application/json;base64,", json));
 
         return output;
     }
@@ -372,9 +339,7 @@ contract ERC1155NFTProduct is ERC1155Upgradeable, GranularRoles, ITemplate {
         override(ERC1155Upgradeable, AccessControlUpgradeable)
         returns (bool)
     {
-        return
-            ERC1155Upgradeable.supportsInterface(interfaceId) ||
-            interfaceId == type(IERC2981).interfaceId;
+        return ERC1155Upgradeable.supportsInterface(interfaceId) || interfaceId == type(IERC2981).interfaceId;
     }
 
     /*************

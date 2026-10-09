@@ -15,11 +15,7 @@ import "../lib/ITemplate.sol";
  *
  * Minting and other write transactions only supported for accounts with relevant access rights.
  */
-contract ERC721NFTProduct is
-    ERC721URIStorageUpgradeable,
-    GranularRoles,
-    ITemplate
-{
+contract ERC721NFTProduct is ERC721URIStorageUpgradeable, GranularRoles, ITemplate {
     /*******************************
      * Extensions, structs, events *
      *******************************/
@@ -104,11 +100,11 @@ contract ERC721NFTProduct is
      *******************/
 
     // Mint a token to input `caller` address
-    function mintToCaller(
-        address caller,
-        uint256 tokenId,
-        string memory tokenURI
-    ) public onlyRole(MINT_ROLE) returns (uint256) {
+    function mintToCaller(address caller, uint256 tokenId, string memory tokenURI)
+        public
+        onlyRole(MINT_ROLE)
+        returns (uint256)
+    {
         _safeMint(caller, tokenId);
         _setTokenURI(tokenId, tokenURI);
         return tokenId;
@@ -121,18 +117,14 @@ contract ERC721NFTProduct is
      * only callable if `metadataUpdatable` is true, the medatadata
      * for the token has not been frozen previously and the caller has `UPDATE_TOKEN_ROLE` (or `ADMIN_ROLE`) role
      */
-    function updateTokenUri(
-        uint256 _tokenId,
-        string memory _tokenUri,
-        bool _isFreezeTokenUri
-    ) public onlyRole(UPDATE_TOKEN_ROLE) {
+    function updateTokenUri(uint256 _tokenId, string memory _tokenUri, bool _isFreezeTokenUri)
+        public
+        onlyRole(UPDATE_TOKEN_ROLE)
+    {
         require(_exists(_tokenId), "Token: Token does not exist");
         require(metadataUpdatable, "Token: Metadata is frozen");
         require(freezeTokenUris[_tokenId] != true, "Token: Token is frozen");
-        require(
-            _isFreezeTokenUri || (bytes(_tokenUri).length != 0),
-            "Token: Token URI is missing"
-        );
+        require(_isFreezeTokenUri || (bytes(_tokenUri).length != 0), "Token: Token URI is missing");
 
         if (bytes(_tokenUri).length != 0) {
             _setTokenURI(_tokenId, _tokenUri);
@@ -150,10 +142,7 @@ contract ERC721NFTProduct is
      * only callable if `tokensTransferable` is true, the token to be transferred
      * is owned by `_owner` and the caller has `TRANSFER_ROLE` (or `ADMIN_ROLE`) role
      */
-    function transferByOwner(address _to, uint256 _tokenId)
-        public
-        onlyRole(TRANSFER_ROLE)
-    {
+    function transferByOwner(address _to, uint256 _tokenId) public onlyRole(TRANSFER_ROLE) {
         require(tokensTransferable, "Transfer: Transfers are disabled");
         _safeTransfer(_owner, _to, _tokenId, "");
     }
@@ -167,10 +156,7 @@ contract ERC721NFTProduct is
     function burn(uint256 _tokenId) public onlyRole(BURN_ROLE) {
         require(tokensBurnable, "Burn: Burns are disabled");
         require(_exists(_tokenId), "Burn: Token does not exist");
-        require(
-            ERC721Upgradeable.ownerOf(_tokenId) == _owner,
-            "Burn: not held by contract owner"
-        );
+        require(ERC721Upgradeable.ownerOf(_tokenId) == _owner, "Burn: not held by contract owner");
         _burn(_tokenId);
     }
 
@@ -190,9 +176,8 @@ contract ERC721NFTProduct is
     ) public onlyRole(UPDATE_CONTRACT_ROLE) {
         // If metadata is frozen, baseURI cannot be updated
         require(
-            metadataUpdatable ||
-                (keccak256(abi.encodePacked(newConfig.baseURI)) ==
-                    keccak256(abi.encodePacked(baseURI))),
+            metadataUpdatable
+                || (keccak256(abi.encodePacked(newConfig.baseURI)) == keccak256(abi.encodePacked(baseURI))),
             "Update: Metadata is frozen"
         );
 
@@ -225,27 +210,18 @@ contract ERC721NFTProduct is
         override(ERC721Upgradeable, AccessControlUpgradeable)
         returns (bool)
     {
-        return
-            ERC721Upgradeable.supportsInterface(interfaceId) ||
-            interfaceId == type(IERC2981).interfaceId;
+        return ERC721Upgradeable.supportsInterface(interfaceId) || interfaceId == type(IERC2981).interfaceId;
     }
 
     // @dev ERC2981 token royalty info
-    function royaltyInfo(uint256, uint256 salePrice)
-        external
-        view
-        returns (address, uint256)
-    {
-        return (
-            royaltiesAddress,
-            (royaltiesBasisPoints * salePrice) / ROYALTIES_BASIS
-        );
+    function royaltyInfo(uint256, uint256 salePrice) external view returns (address, uint256) {
+        return (royaltiesAddress, (royaltiesBasisPoints * salePrice) / ROYALTIES_BASIS);
     }
 
     /**
-    * @dev OpenSea contract metadata, returns a base64 encoded JSON string containing royalties basis points
-    * and royalties address
-    */
+     * @dev OpenSea contract metadata, returns a base64 encoded JSON string containing royalties basis points
+     * and royalties address
+     */
     function contractURI() external view returns (string memory) {
         string memory json = Base64.encode(
             bytes(
@@ -261,9 +237,7 @@ contract ERC721NFTProduct is
             )
         );
 
-        string memory output = string(
-            abi.encodePacked("data:application/json;base64,", json)
-        );
+        string memory output = string(abi.encodePacked("data:application/json;base64,", json));
 
         return output;
     }
@@ -277,12 +251,7 @@ contract ERC721NFTProduct is
      * Returns token ID for the corresponding owner and index
      * if the `owner` owns tokens with IDs (2, 4, 7) then for index 2, token ID 7 is returned
      */
-    function tokenOfOwnerByIndex(address owner, uint256 index)
-        public
-        view
-        virtual
-        returns (uint256)
-    {
+    function tokenOfOwnerByIndex(address owner, uint256 index) public view virtual returns (uint256) {
         require(index < balanceOf(owner), "Owner index out of bounds");
         return _ownedTokens[owner][index];
     }
@@ -309,22 +278,12 @@ contract ERC721NFTProduct is
     // Mapping from token id to position in the allTokens array
     mapping(uint256 => uint256) private _allTokensIndex;
 
-    function _baseURI()
-        internal
-        view
-        virtual
-        override(ERC721Upgradeable)
-        returns (string memory)
-    {
+    function _baseURI() internal view virtual override(ERC721Upgradeable) returns (string memory) {
         return baseURI;
     }
 
     // Required to support enumerability (tokens by index)
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal virtual override {
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual override {
         super._beforeTokenTransfer(from, to, tokenId);
 
         if (from == address(0)) {
@@ -355,9 +314,7 @@ contract ERC721NFTProduct is
      * while the token is not assigned a new owner, the `_ownedTokensIndex` mapping is _not_ updated: this allows for
      * gas optimizations e.g. when performing a transfer operation (avoiding double writes).
      */
-    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId)
-        private
-    {
+    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId) private {
         // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and
         // then delete the last slot (swap and pop).
 
